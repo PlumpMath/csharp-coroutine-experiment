@@ -17,7 +17,7 @@
 		"command": "csc.exe"
 	},
 	
-	"args": ["Hello.cs"],
+	"args": ["-debug", "-out:Hello.exe", "Hello.cs"],
 	
 	"problemMatcher": "$msCompile"
 }
