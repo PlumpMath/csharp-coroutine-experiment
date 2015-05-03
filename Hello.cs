@@ -1,36 +1,60 @@
 using System;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
 
-public interface IScheduler
+public class Scheduler
 {
-	void Schedule(double time, Action<IScheduler> action);
-}
-
-public class Scheduler : IScheduler
-{
-	public void Schedule(double time, Action<IScheduler> action)
+	List<Tuple<double,IEnumerator>> ScheduledTasks = new List<Tuple<double,IEnumerator>>();
+	
+	public void Schedule(double time, IEnumerator action)
 	{
-
+		ScheduledTasks.Add(new Tuple<double,IEnumerator>(time,action));
 	}
 
-	public void Wait(double time)
+	public void Run()
 	{
-		
+		while(ScheduledTasks.Any())
+		{
+			var sortedTasks = ScheduledTasks.OrderBy(t => t.Item1);
+			var nextTask = sortedTasks.First();
+			ScheduledTasks.RemoveAt(ScheduledTasks.IndexOf(nextTask));
+			var time = nextTask.Item1;
+			var coroutine = nextTask.Item2;
+			if(coroutine.MoveNext())
+			{
+				Console.WriteLine(coroutine.Current);
+				Schedule((double)coroutine.Current, coroutine);
+			}	
+		}
 	}
 }
 
 public class Hello
 {
-	public static Func<IScheduler> GetScheduler = delegate { return new Scheduler(); };
-
 	public static void Main()
 	{
-		var scheduler = GetScheduler();
+		var scheduler = new Scheduler();
 
-		scheduler.Schedule(2.0, s => Console.WriteLine("Hello"));
-		scheduler.Schedule(1.0, s => Console.WriteLine("Tony"));
-		scheduler.Schedule(3.0, s => Console.WriteLine("Hello"));
-		scheduler.Schedule(4.0, s => Console.WriteLine("Tony"));
+		scheduler.Schedule((double)1.0, SomeTask());
+		scheduler.Schedule((double)2.0, OtherTask());
 
-		Console.WriteLine("Hello, Tony");
+		scheduler.Run();
+	}
+	
+	public static IEnumerator SomeTask()
+	{
+		Console.WriteLine("Hello");
+		yield return 3.0;
+		Console.WriteLine("World");
+		yield return 4.0;
+		Console.WriteLine("Print this last");
+	}
+	
+	public static IEnumerator OtherTask()
+	{
+		yield return 2.0;
+		Console.WriteLine("Tony And");
+		yield break;
 	}
 }
