@@ -21,11 +21,13 @@ public class Scheduler
 			var nextTask = sortedTasks.First();
 			_scheduledTasks.RemoveAt(_scheduledTasks.IndexOf(nextTask));
 			var time = nextTask.Item1;
+			var timeToExecute = DateTime.Now.AddSeconds(time);
+			while(DateTime.Now < timeToExecute) System.Threading.Thread.Sleep(0);
 			var coroutine = nextTask.Item2();
 			if(coroutine.MoveNext())
 			{
 				Schedule((double)coroutine.Current, () => coroutine);
-			}	
+			}
 		}
 	}
 }
@@ -36,8 +38,8 @@ public class Hello
 	{
 		var scheduler = new Scheduler();
 
-		scheduler.Schedule((double)1.0, SomeTask);
-		scheduler.Schedule((double)2.0, OtherTask);
+		scheduler.Schedule((double)0.0, SomeTask);
+		scheduler.Schedule((double)0.25, OtherTask);
 
 		scheduler.Run();
 	}
@@ -45,15 +47,14 @@ public class Hello
 	public static IEnumerator SomeTask()
 	{
 		Console.WriteLine("Hello");
-		yield return 3.0;
+		yield return 0.25;
 		Console.WriteLine("World");
-		yield return 4.0;
+		yield return 0.25;
 		Console.WriteLine("Print this last");
 	}
 	
 	public static IEnumerator OtherTask()
 	{
-		yield return 2.0;
 		Console.WriteLine("Tony And");
 		yield break;
 	}
