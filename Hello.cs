@@ -5,26 +5,26 @@ using System.Collections.Generic;
 
 public class Scheduler
 {
-	List<Tuple<double,IEnumerator>> ScheduledTasks = new List<Tuple<double,IEnumerator>>();
+	public delegate IEnumerator Coroutine();
+	private List<Tuple<double,Coroutine>> _scheduledTasks = new List<Tuple<double,Coroutine>>();
 	
-	public void Schedule(double time, IEnumerator action)
+	public void Schedule(double time, Coroutine action)
 	{
-		ScheduledTasks.Add(new Tuple<double,IEnumerator>(time,action));
+		_scheduledTasks.Add(new Tuple<double,Coroutine>(time, action));
 	}
 
 	public void Run()
 	{
-		while(ScheduledTasks.Any())
+		while(_scheduledTasks.Any())
 		{
-			var sortedTasks = ScheduledTasks.OrderBy(t => t.Item1);
+			var sortedTasks = _scheduledTasks.OrderBy(t => t.Item1);
 			var nextTask = sortedTasks.First();
-			ScheduledTasks.RemoveAt(ScheduledTasks.IndexOf(nextTask));
+			_scheduledTasks.RemoveAt(_scheduledTasks.IndexOf(nextTask));
 			var time = nextTask.Item1;
-			var coroutine = nextTask.Item2;
+			var coroutine = nextTask.Item2();
 			if(coroutine.MoveNext())
 			{
-				Console.WriteLine(coroutine.Current);
-				Schedule((double)coroutine.Current, coroutine);
+				Schedule((double)coroutine.Current, () => coroutine);
 			}	
 		}
 	}
@@ -36,8 +36,8 @@ public class Hello
 	{
 		var scheduler = new Scheduler();
 
-		scheduler.Schedule((double)1.0, SomeTask());
-		scheduler.Schedule((double)2.0, OtherTask());
+		scheduler.Schedule((double)1.0, SomeTask);
+		scheduler.Schedule((double)2.0, OtherTask);
 
 		scheduler.Run();
 	}
